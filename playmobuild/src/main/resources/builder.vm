@@ -1,4 +1,4 @@
-
+#set($ident = "        ")
 #if ($packageName)
 package $packageName;
 #end
@@ -6,8 +6,8 @@ package $packageName;
 public class $builderSimpleClassName {
 
     #foreach ($field in $requiredFields)
-    public interface #if ($foreach.isFirst)StartBuilder#else${display.capitalize($field.name())}Builder#end  {
-        #if($foreach.isLast)OptionalBuilder#else ${display.capitalize($requiredFields[$foreach.index+1].name())}Builder#end with${display.capitalize(${field.name()})}($field.type() value);
+    public interface #if ($foreach.isFirst)StartBuilder#else${display.capitalize($field.name())}Builder#end {
+$ident#if($foreach.isLast)OptionalBuilder#else${display.capitalize($requiredFields[$foreach.index+1].name())}Builder#end with${display.capitalize(${field.name()})}($field.type() value);
     }
     #end
 
@@ -15,7 +15,7 @@ public class $builderSimpleClassName {
         #foreach ($field in $optionalFields)
         OptionalBuilder with${display.capitalize(${field.name()})}($field.type() value);
         #if($field.isInline())
-        OptionalBuilder add${display.capitalize(${field.name()})}($field.type().getTypeArguments().get(0) value);
+        OptionalBuilder add${display.capitalize(${field.inlineName()})}($field.type().getTypeArguments().get(0) value);
         #end
         #end
         $className build();
@@ -43,7 +43,7 @@ public class $builderSimpleClassName {
         #if($field.isInline())
 
         @Override
-        public OptionalBuilder add${display.capitalize(${field.name()})}($field.type().getTypeArguments().get(0) value) {
+        public OptionalBuilder add${display.capitalize(${field.inlineName()})}($field.type().getTypeArguments().get(0) value) {
             this.${field.name()}.add(value);
             return this;
         }

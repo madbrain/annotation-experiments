@@ -2,6 +2,7 @@ package com.github.madbrain.playmobuild.processor;
 
 import com.github.madbrain.playmobuild.api.Inline;
 import com.github.madbrain.playmobuild.api.Required;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
@@ -86,8 +87,7 @@ public class PlaymoBuildProcessor extends AbstractProcessor {
                 })
                 .toList();
 
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE,
-                "Generate builder for " + className);
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Generate builder for " + className);
 
         String packageName = null;
         int lastDot = className.lastIndexOf('.');
@@ -101,7 +101,7 @@ public class PlaymoBuildProcessor extends AbstractProcessor {
 
         JavaFileObject builderFile = processingEnv.getFiler().createSourceFile(builderClassName);
         try (PrintWriter out = new PrintWriter(builderFile.openWriter())) {
-            Template t = getVelocityEngine().getTemplate("builder.vm");
+            Template template = getVelocityEngine().getTemplate("builder.vm");
             Context context = toolManager.createContext();
             context.put("packageName", packageName);
             context.put("className", className);
@@ -111,10 +111,13 @@ public class PlaymoBuildProcessor extends AbstractProcessor {
             context.put("fields", fields);
             context.put("requiredFields", fields.stream().filter(FieldModel::isRequired).toList());
             context.put("optionalFields", fields.stream().filter(f -> !f.isRequired()).toList());
-
-            t.merge(context, out);
+            template.merge(context, out);
         }
     }
 
-    public record FieldModel(TypeMirror type, Name name, boolean isRequired, Inline isInline) { }
+    public record FieldModel(TypeMirror type, Name name, boolean isRequired, Inline isInline) {
+        public String inlineName() {
+            return isInline != null && !StringUtils.isBlank(isInline.value()) ? isInline.value() : name().toString();
+        }
+    }
 }
