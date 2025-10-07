@@ -11,6 +11,7 @@
   <modules>
     <module>demo</module>
     <module>playmobuild</module>
+      <module>blenderdna</module>
   </modules>
 
   <properties>

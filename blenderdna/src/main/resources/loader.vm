@@ -1,0 +1,49 @@
+#if ($packageName)
+package $packageName;
+#end
+
+import org.github.madbrain.demo.blender.loader.FileLoader;
+import org.github.madbrain.demo.blender.loader.FileReader;
+import org.github.madbrain.demo.blender.loader.FileWriter;
+import org.github.madbrain.demo.blender.loader.StructLoader;
+
+import java.io.IOException;
+
+public class ${loaderSimpleClassName} implements StructLoader<${simpleClassName}> {
+    @Override
+    public Class<${simpleClassName}> getTargetClass() {
+        return ${simpleClassName}.class;
+    }
+
+    @Override
+    public ${simpleClassName} load(FileLoader fileLoader, FileReader reader) throws IOException {
+        var value = new ${simpleClassName}();
+        #foreach ($field in $fields)
+        #if(${field.type.isReference()})
+        value.${field.name} = fileLoader.readStruct(reader, ${field.type.structType()}.class);
+        #elseif(${field.type.isArray()})
+        value.${field.name} = fileLoader.readList(reader, ${field.type.componentType()}.class);
+        #elseif(${field.type.isEnum()})
+        value.${field.name} = fileLoader.readEnum(reader, ${field.type.enumType()}.class);
+        #else
+        value.${field.name} = reader.read${field.type.primitiveType()}();
+        #end
+        #end
+        return value;
+    }
+
+    @Override
+    public void save(FileLoader fileLoader, FileWriter writer, ${simpleClassName} value) throws IOException {
+        #foreach ($field in $fields)
+        #if(${field.type.isReference()})
+        fileLoader.writeStruct(writer, value.${field.name});
+        #elseif(${field.type.isArray()})
+        fileLoader.writeList(writer, value.${field.name});
+        #elseif(${field.type.isEnum()})
+        fileLoader.writeEnum(writer, value.${field.name});
+        #else
+        writer.write${field.type.primitiveType()}(value.${field.name});
+        #end
+        #end
+    }
+}
