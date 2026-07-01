@@ -1,0 +1,41 @@
+
+#if ($packageName)
+package $packageName;
+#end
+
+public class $builderSimpleClassName {
+
+    public interface StartBuilder {
+    #foreach ($field in $fields)
+        StartBuilder with${display.capitalize(${field.name()})}($field.type() value);
+    #end
+        $className build();
+    }
+
+    private static class InnerBuilder implements StartBuilder {
+        #foreach ($field in $fields)
+        private ${field.type()} ${field.name()};
+        #end
+
+        #foreach ($field in $fields)
+        @Override
+        public StartBuilder with${display.capitalize(${field.name()})}($field.type() value) {
+            this.${field.name()} = value;
+            return this;
+        }
+        #end
+
+        @Override
+        public $className build() {
+            return new $className(
+                #foreach ($field in $fields)
+                ${field.name()}#if ($foreach.hasNext),#end
+                #end
+            );
+        }
+    }
+
+    public static StartBuilder make() {
+        return new InnerBuilder();
+    }
+}
