@@ -1,6 +1,5 @@
 package com.github.madbrain.playmobuild.processor;
 
-import com.github.madbrain.playmobuild.api.Inline;
 import com.github.madbrain.playmobuild.api.Required;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
@@ -20,8 +19,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
@@ -70,7 +67,8 @@ public class PlaymoBuildProcessor extends AbstractProcessor {
 
         var fields = element.getRecordComponents().stream()
                 .map(e -> {
-                    return new FieldModel(e.asType(), e.getSimpleName());
+                    var isRequired = e.getAnnotation(Required.class) != null;
+                    return new FieldModel(e.asType(), e.getSimpleName(), isRequired);
                 })
                 .toList();
 
@@ -84,12 +82,14 @@ public class PlaymoBuildProcessor extends AbstractProcessor {
             context.put("builderClassName", builderClassName);
             context.put("builderSimpleClassName", builderSimpleClassName);
             context.put("fields", fields);
+            context.put("requiredFields", fields.stream().filter(FieldModel::isRequired).toList());
+            context.put("optionalFields", fields.stream().filter(f -> !f.isRequired()).toList());
 
             t.merge(context, out);
         }
     }
 
-    public record FieldModel(TypeMirror type, Name name) { }
+    public record FieldModel(TypeMirror type, Name name, boolean isRequired) { }
 
     private VelocityEngine getVelocityEngine() {
         if (velocityEngine == null) {
