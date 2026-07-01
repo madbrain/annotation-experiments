@@ -14,13 +14,16 @@ public class $builderSimpleClassName {
     public interface OptionalBuilder {
         #foreach ($field in $optionalFields)
         OptionalBuilder with${display.capitalize(${field.name()})}($field.type() value);
+        #if($field.isInline())
+        OptionalBuilder add${display.capitalize(${field.inlineName()})}($field.type().getTypeArguments().get(0) value);
+        #end
         #end
         $className build();
     }
 
     private static class InnerBuilder implements #foreach ($field in $requiredFields)#if($foreach.isFirst)StartBuilder#else ${display.capitalize($field.name())}Builder#end,#end OptionalBuilder {
         #foreach ($field in $fields)
-        private ${field.type()} ${field.name()};
+        private ${field.type()} ${field.name()}#if($field.isInline()) = new java.util.ArrayList<>()#end;
         #end
 
         #foreach ($field in $requiredFields)
@@ -37,6 +40,14 @@ public class $builderSimpleClassName {
             this.${field.name()} = value;
             return this;
         }
+        #if($field.isInline())
+
+        @Override
+        public OptionalBuilder add${display.capitalize(${field.inlineName()})}($field.type().getTypeArguments().get(0) value) {
+            this.${field.name()}.add(value);
+            return this;
+        }
+        #end
         #end
 
         @Override

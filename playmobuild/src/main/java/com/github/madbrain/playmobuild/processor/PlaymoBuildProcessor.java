@@ -1,6 +1,8 @@
 package com.github.madbrain.playmobuild.processor;
 
+import com.github.madbrain.playmobuild.api.Inline;
 import com.github.madbrain.playmobuild.api.Required;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
@@ -19,6 +21,8 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
@@ -68,7 +72,13 @@ public class PlaymoBuildProcessor extends AbstractProcessor {
         var fields = element.getRecordComponents().stream()
                 .map(e -> {
                     var isRequired = e.getAnnotation(Required.class) != null;
-                    return new FieldModel(e.asType(), e.getSimpleName(), isRequired);
+                    var isInline = e.getAnnotation(Inline.class);
+                    if (isInline != null && (e.asType().getKind() != TypeKind.DECLARED
+                            || !((DeclaredType) e.asType()).asElement().getSimpleName().toString().equals("List"))) {
+                        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "@Inline only apply to List", e);
+                        isInline = null;
+                    }
+                    return new FieldModel(e.asType(), e.getSimpleName(), isRequired, isInline);
                 })
                 .toList();
 
@@ -89,7 +99,11 @@ public class PlaymoBuildProcessor extends AbstractProcessor {
         }
     }
 
-    public record FieldModel(TypeMirror type, Name name, boolean isRequired) { }
+    public record FieldModel(TypeMirror type, Name name, boolean isRequired, Inline isInline) {
+        public String inlineName() {
+            return isInline != null && !StringUtils.isBlank(isInline.value()) ? isInline.value() : name().toString();
+        }
+    }
 
     private VelocityEngine getVelocityEngine() {
         if (velocityEngine == null) {
